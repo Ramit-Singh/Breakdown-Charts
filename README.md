@@ -1,16 +1,24 @@
-# React + Vite
+# Breakdown Charts Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Interactive analytics dashboard built with React, `react-grid-layout`, and AG Charts.
 
-Currently, two official plugins are available:
+## What this project does
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+1. Renders a dashboard of analytics widgets in a 12-column grid.
+2. Supports drag-only layout editing with Save/Cancel workflow.
+3. Persists committed layout to localStorage.
+4. Embeds filters inside the Revenue Half-Moon card and updates all widgets from shared filter state.
+5. Uses layered donut series in AG Charts to create a half-moon revenue visualization.
 
-## React Compiler
+## Scripts
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. `npm run dev` - run local dev server.
+2. `npm run build` - production build.
+3. `npm run lint` - eslint checks.
+4. `npm run preview` - preview production build.
 
-## Expanding the ESLint configuration
+## Code-level documentation
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+For a full implementation walkthrough (state model, component logic, data flow, dependencies, grid behavior, and chart internals), see:
+
+[Code-Level Walkthrough](./docs/CODE_LEVEL_WALKTHROUGH.md)
