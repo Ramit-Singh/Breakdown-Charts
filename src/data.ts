@@ -1,32 +1,42 @@
-export const RAW_DATA = {
-  '1P': { total: 1000, ADS: 700, Organic: 300 },
-  FBA: { total: 500, ADS: 400, Organic: 100 },
-  MFN: { total: 2500, ADS: 2000, Organic: 500 },
-}
-
 export const SELLER_FILTERS = {
   ALL: 'All',
   ONE_P: '1P',
   THREE_P: '3P',
   FBA: 'FBA',
   MFN: 'MFN',
+} as const
+
+export type SellerFilter = (typeof SELLER_FILTERS)[keyof typeof SELLER_FILTERS]
+export type SellerKey = '1P' | 'FBA' | 'MFN'
+export type TrafficKey = 'ADS' | 'Organic'
+
+interface RawSellerData {
+  total: number
+  ADS: number
+  Organic: number
 }
 
-export const SELLER_ORDER = ['1P', 'FBA', 'MFN']
-export const TRAFFIC_ORDER = ['ADS', 'Organic']
+export const RAW_DATA: Record<SellerKey, RawSellerData> = {
+  '1P': { total: 1000, ADS: 700, Organic: 300 },
+  FBA: { total: 500, ADS: 400, Organic: 100 },
+  MFN: { total: 2500, ADS: 2000, Organic: 500 },
+}
 
-export const SELLER_RING_COLORS = {
+export const SELLER_ORDER: SellerKey[] = ['1P', 'FBA', 'MFN']
+export const TRAFFIC_ORDER: TrafficKey[] = ['ADS', 'Organic']
+
+export const SELLER_RING_COLORS: Record<SellerKey, string> = {
   '1P': '#F59E0B',
   FBA: '#EF4444',
   MFN: '#6366F1',
 }
 
-export const TRAFFIC_COLORS = {
+export const TRAFFIC_COLORS: Record<TrafficKey, string> = {
   ADS: '#1E293B',
   Organic: '#64748B',
 }
 
-export const FILTER_SETS = {
+export const FILTER_SETS: Record<SellerFilter, SellerKey[]> = {
   [SELLER_FILTERS.ALL]: ['1P', 'FBA', 'MFN'],
   [SELLER_FILTERS.ONE_P]: ['1P'],
   [SELLER_FILTERS.THREE_P]: ['FBA', 'MFN'],
@@ -34,7 +44,7 @@ export const FILTER_SETS = {
   [SELLER_FILTERS.MFN]: ['MFN'],
 }
 
-const FILTER_LABELS = {
+const FILTER_LABELS: Record<SellerFilter, string> = {
   [SELLER_FILTERS.ALL]: 'All',
   [SELLER_FILTERS.ONE_P]: '1P',
   [SELLER_FILTERS.THREE_P]: '3P',
@@ -42,7 +52,31 @@ const FILTER_LABELS = {
   [SELLER_FILTERS.MFN]: 'MFN',
 }
 
-export const FILTER_OPTIONS = [
+export interface FilterOption {
+  key: SellerFilter
+  label: string
+  total: number
+}
+
+export interface TrafficSegment {
+  key: TrafficKey
+  label: string
+  longLabel: string
+  value: number
+  color: string
+  percentage: number
+}
+
+export interface SellerSegment {
+  key: SellerKey
+  label: string
+  value: number
+  percentage: number
+  color: string
+  showLabel: boolean
+}
+
+export const FILTER_OPTIONS: FilterOption[] = [
   SELLER_FILTERS.ALL,
   SELLER_FILTERS.ONE_P,
   SELLER_FILTERS.THREE_P,
@@ -54,7 +88,7 @@ export const FILTER_OPTIONS = [
   total: getFilteredTotal(FILTER_SETS[filterKey]),
 }))
 
-export function formatCurrency(value) {
+export function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -62,29 +96,23 @@ export function formatCurrency(value) {
   }).format(value)
 }
 
-export function formatPercent(value) {
+export function formatPercent(value: number): string {
   return `${value.toFixed(1)}%`
 }
 
-export function getVisibleSellers(filterKey) {
+export function getVisibleSellers(filterKey: SellerFilter): SellerKey[] {
   return FILTER_SETS[filterKey] ?? FILTER_SETS[SELLER_FILTERS.ALL]
 }
 
-export function getFilteredTotal(activeSellerKeys) {
-  return activeSellerKeys.reduce(
-    (sum, sellerKey) => sum + RAW_DATA[sellerKey].total,
-    0,
-  )
+export function getFilteredTotal(activeSellerKeys: SellerKey[]): number {
+  return activeSellerKeys.reduce((sum, sellerKey) => sum + RAW_DATA[sellerKey].total, 0)
 }
 
-export function getTrafficBreakdown(activeSellerKeys) {
+export function getTrafficBreakdown(activeSellerKeys: SellerKey[]): TrafficSegment[] {
   const total = getFilteredTotal(activeSellerKeys)
 
   return TRAFFIC_ORDER.map((trafficKey) => {
-    const value = activeSellerKeys.reduce(
-      (sum, sellerKey) => sum + RAW_DATA[sellerKey][trafficKey],
-      0,
-    )
+    const value = activeSellerKeys.reduce((sum, sellerKey) => sum + RAW_DATA[sellerKey][trafficKey], 0)
 
     return {
       key: trafficKey,
@@ -97,7 +125,7 @@ export function getTrafficBreakdown(activeSellerKeys) {
   })
 }
 
-export function getFilteredSellerSegments(activeSellerKeys) {
+export function getFilteredSellerSegments(activeSellerKeys: SellerKey[]): SellerSegment[] {
   const filteredTotal = getFilteredTotal(activeSellerKeys)
 
   return activeSellerKeys.map((sellerKey) => {
@@ -114,7 +142,7 @@ export function getFilteredSellerSegments(activeSellerKeys) {
   })
 }
 
-export function getCenterLabel(filterKey) {
+export function getCenterLabel(filterKey: SellerFilter): string {
   switch (filterKey) {
     case SELLER_FILTERS.ALL:
       return 'Total Revenue'

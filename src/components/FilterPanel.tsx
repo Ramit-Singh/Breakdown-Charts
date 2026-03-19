@@ -1,8 +1,21 @@
-import { FILTER_OPTIONS, SELLER_FILTERS } from '../data'
+import {
+  FILTER_OPTIONS,
+  SELLER_FILTERS,
+  type FilterOption,
+  type SellerFilter,
+} from '../data'
 
-function FilterPanel({ sellerFilter, onSellerChange }) {
+interface FilterPanelProps {
+  sellerFilter: SellerFilter
+  onSellerChange: (filter: SellerFilter) => void
+}
+
+function FilterPanel({ sellerFilter, onSellerChange }: FilterPanelProps) {
   const topLevelFilters = FILTER_OPTIONS.filter(
-    (opt) => opt.key === SELLER_FILTERS.ALL || opt.key === SELLER_FILTERS.ONE_P || opt.key === SELLER_FILTERS.THREE_P
+    (opt: FilterOption) =>
+      opt.key === SELLER_FILTERS.ALL ||
+      opt.key === SELLER_FILTERS.ONE_P ||
+      opt.key === SELLER_FILTERS.THREE_P,
   )
 
   const is3PContext =
@@ -10,7 +23,7 @@ function FilterPanel({ sellerFilter, onSellerChange }) {
     sellerFilter === SELLER_FILTERS.FBA ||
     sellerFilter === SELLER_FILTERS.MFN
 
-  const breakdownOptions = [
+  const breakdownOptions: Array<{ key: SellerFilter; label: string }> = [
     { key: SELLER_FILTERS.THREE_P, label: 'All' },
     { key: SELLER_FILTERS.FBA, label: 'FBA' },
     { key: SELLER_FILTERS.MFN, label: 'MFN' },
@@ -21,7 +34,6 @@ function FilterPanel({ sellerFilter, onSellerChange }) {
       <h3 className="filter-panel-v2__title">Filters</h3>
 
       <div className="filter-row">
-        {/* Left container: Party filters */}
         <div className="filter-group">
           <div className="filter-pills">
             {topLevelFilters.map((opt) => {
@@ -32,6 +44,7 @@ function FilterPanel({ sellerFilter, onSellerChange }) {
               return (
                 <button
                   key={opt.key}
+                  type="button"
                   className={`filter-pill ${isActive ? 'filter-pill--active' : ''}`}
                   onClick={() => onSellerChange(opt.key)}
                 >
@@ -42,7 +55,6 @@ function FilterPanel({ sellerFilter, onSellerChange }) {
           </div>
         </div>
 
-        {/* Right container: 3P Breakdown as radio buttons */}
         {is3PContext && (
           <div className="filter-group filter-group--breakdown">
             <span className="filter-group__label">3P Breakdown</span>

@@ -1,16 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import GridLayout, { WidthProvider } from 'react-grid-layout/legacy'
 import ChartErrorBoundary from './components/ChartErrorBoundary'
 import FilterPanel from './components/FilterPanel'
 import RadialChart from './components/RadialChart'
 import {
   SELLER_FILTERS,
-  formatCurrency,
-  formatPercent,
   getFilteredSellerSegments,
   getFilteredTotal,
   getTrafficBreakdown,
   getVisibleSellers,
+  type SellerFilter,
+  type SellerSegment,
+  type TrafficSegment,
 } from './data'
 import 'react-grid-layout/css/styles.css'
 import './styles/app.css'
@@ -20,75 +21,117 @@ const AutoWidthGridLayout = WidthProvider(GridLayout)
 const STORAGE_KEY_V3 = 'amazon-revenue-layout-v3'
 const GRID_COLUMNS = 12
 const GRID_ROW_HEIGHT = 16
+const GRID_MARGIN: [number, number] = [10, 10]
+const GRID_CONTAINER_PADDING: [number, number] = [10, 10]
 
-const WIDGET_LIBRARY = {
-  revenueHalfMoon: {
+type WidgetType = 'revenueHalfMoon'
+
+interface WidgetLayoutDefinition {
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
+interface WidgetDefinition {
+  title: string
+  layout: WidgetLayoutDefinition
+}
+
+interface LayoutItem extends WidgetLayoutDefinition {
+  id: string
+  type: WidgetType
+}
+
+interface GridLayoutItem {
+  i: string
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
+interface WidgetContext {
+  sellerFilter: SellerFilter
+  filteredTotal: number
+  sellerSegments: SellerSegment[]
+  trafficBreakdown: TrafficSegment[]
+  onSellerChange: (filter: SellerFilter) => void
+  isEditMode: boolean
+}
+
+type ScaffoldStyle = CSSProperties & {
+  '--grid-columns': string
+  '--grid-row-height': string
+  '--grid-gap-x': string
+  '--grid-gap-y': string
+  '--grid-pad-x': string
+  '--grid-pad-y': string
+}
+
+const WIDGET_TYPE: WidgetType = 'revenueHalfMoon'
+
+const WIDGET_LIBRARY: Record<WidgetType, WidgetDefinition> = {
+  [WIDGET_TYPE]: {
     title: 'Revenue Half-Moon',
     layout: { x: 0, y: 0, w: 5, h: 20 },
   },
-  trafficBreakdown: {
-    title: 'Traffic Breakdown',
-    layout: { x: 8, y: 0, w: 2, h: 8 },
-  },
-  sellerContribution: {
-    title: 'Seller Contribution',
-    layout: { x: 0, y: 18, w: 2, h: 9 },
-  },
-  kpiOverview: {
-    title: 'Topline KPIs',
-    layout: { x: 6, y: 18, w: 2, h: 10 },
-  },
 }
 
-const DEFAULT_WIDGET_ORDER = [
-  'revenueHalfMoon',
-  'trafficBreakdown',
-  'sellerContribution',
-  'kpiOverview',
-]
+const DEFAULT_WIDGET_ORDER: WidgetType[] = [WIDGET_TYPE]
 
-const clamp = (value, min, max) => Math.min(Math.max(value, min), max)
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(Math.max(value, min), max)
 
-function sortLayoutItems(layoutItems) {
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null
+
+function sortLayoutItems(layoutItems: LayoutItem[]): LayoutItem[] {
   return [...layoutItems].sort((a, b) => a.y - b.y || a.x - b.x)
 }
 
-function cloneLayoutItems(layoutItems) {
+function cloneLayoutItems(layoutItems: LayoutItem[]): LayoutItem[] {
   return layoutItems.map((item) => ({ ...item }))
 }
 
-function enforceFixedWidgetDimensions(layoutItems) {
-  if (!Array.isArray(layoutItems) || !layoutItems.length) {
-    return layoutItems
-  }
+function enforceFixedWidgetDimensions(layoutItems: LayoutItem[]): LayoutItem[] {
+  if (!Array.isArray(layoutItems) || layoutItems.length === 0) return layoutItems
 
   let hasChange = false
 
   const normalized = layoutItems
     .map((item) => {
-      const widgetMeta = WIDGET_LIBRARY[item.type]
-      if (!widgetMeta) {
+      if (!item || item.type !== WIDGET_TYPE) {
         hasChange = true
         return null
       }
 
+      const widgetMeta = WIDGET_LIBRARY[WIDGET_TYPE]
       const width = widgetMeta.layout.w
       const height = widgetMeta.layout.h
       const nextX = clamp(item.x, 0, Math.max(0, GRID_COLUMNS - width))
+      const nextY = Math.max(0, Number.isFinite(item.y) ? item.y : widgetMeta.layout.y)
+      const nextId = item.id || WIDGET_TYPE
 
-      if (item.w !== width || item.h !== height || item.x !== nextX) {
+      if (
+        item.w !== width ||
+        item.h !== height ||
+        item.x !== nextX ||
+        item.y !== nextY ||
+        item.id !== nextId
+      ) {
         hasChange = true
-        return { ...item, x: nextX, w: width, h: height }
+        return { ...item, id: nextId, x: nextX, y: nextY, w: width, h: height }
       }
 
       return item
     })
-    .filter(Boolean)
+    .filter((item): item is LayoutItem => Boolean(item))
 
   return hasChange ? sortLayoutItems(normalized) : layoutItems
 }
 
-function getDefaultLayoutItems() {
+function getDefaultLayoutItems(): LayoutItem[] {
   return DEFAULT_WIDGET_ORDER.map((type) => ({
     id: type,
     type,
@@ -96,44 +139,43 @@ function getDefaultLayoutItems() {
   }))
 }
 
-function loadInitialLayout() {
-  if (typeof window === 'undefined') {
-    return getDefaultLayoutItems()
-  }
+function loadInitialLayout(): LayoutItem[] {
+  if (typeof window === 'undefined') return getDefaultLayoutItems()
 
   try {
-    const v3Raw = window.localStorage.getItem(STORAGE_KEY_V3)
-    if (!v3Raw) return getDefaultLayoutItems()
+    const storedRaw = window.localStorage.getItem(STORAGE_KEY_V3)
+    if (!storedRaw) return getDefaultLayoutItems()
 
-    const parsedV3 = JSON.parse(v3Raw)
-    if (!Array.isArray(parsedV3)) return getDefaultLayoutItems()
+    const parsed: unknown = JSON.parse(storedRaw)
+    if (!Array.isArray(parsed)) return getDefaultLayoutItems()
 
-    const seenIds = new Set()
-    const normalized = parsedV3
-      .map((item) => {
-        if (!item || typeof item !== 'object' || typeof item.type !== 'string') return null
+    const normalized = parsed
+      .map((item): LayoutItem | null => {
+        if (!isRecord(item)) return null
 
-        const widgetMeta = WIDGET_LIBRARY[item.type]
-        if (!widgetMeta) return null
+        const itemType = typeof item.type === 'string' ? item.type : ''
+        if (itemType !== WIDGET_TYPE) return null
 
+        const widgetMeta = WIDGET_LIBRARY[WIDGET_TYPE]
         const width = widgetMeta.layout.w
         const height = widgetMeta.layout.h
         const xValue = Number(item.x)
         const yValue = Number(item.y)
-        const x = clamp(
-          Number.isFinite(xValue) ? Math.floor(xValue) : widgetMeta.layout.x,
-          0,
-          Math.max(0, GRID_COLUMNS - width),
-        )
-        const y = Math.max(0, Number.isFinite(yValue) ? Math.floor(yValue) : widgetMeta.layout.y)
-        const id = typeof item.id === 'string' && item.id ? item.id : item.type
 
-        if (seenIds.has(id)) return null
-        seenIds.add(id)
-
-        return { id, type: item.type, x, y, w: width, h: height }
+        return {
+          id: WIDGET_TYPE,
+          type: WIDGET_TYPE,
+          x: clamp(
+            Number.isFinite(xValue) ? Math.floor(xValue) : widgetMeta.layout.x,
+            0,
+            Math.max(0, GRID_COLUMNS - width),
+          ),
+          y: Math.max(0, Number.isFinite(yValue) ? Math.floor(yValue) : widgetMeta.layout.y),
+          w: width,
+          h: height,
+        }
       })
-      .filter(Boolean)
+      .filter((item): item is LayoutItem => Boolean(item))
 
     return normalized.length ? normalized : getDefaultLayoutItems()
   } catch {
@@ -141,7 +183,7 @@ function loadInitialLayout() {
   }
 }
 
-function getStoragePayload(layoutItems) {
+function getStoragePayload(layoutItems: LayoutItem[]): Array<Pick<LayoutItem, 'id' | 'type' | 'x' | 'y' | 'w' | 'h'>> {
   return layoutItems.map(({ id, type, x, y, w, h }) => ({ id, type, x, y, w, h }))
 }
 
@@ -157,7 +199,7 @@ function PencilIcon() {
   )
 }
 
-function renderWidgetBody(widgetType, context) {
+function renderRevenueWidget(context: WidgetContext) {
   const {
     sellerFilter,
     filteredTotal,
@@ -167,106 +209,37 @@ function renderWidgetBody(widgetType, context) {
     isEditMode,
   } = context
 
-  switch (widgetType) {
-    case 'revenueHalfMoon':
-      return (
-        <div className="half-moon-widget">
-          <div className="half-moon-widget__filters widget-no-drag">
-            <FilterPanel sellerFilter={sellerFilter} onSellerChange={onSellerChange} />
-          </div>
-          <div className="half-moon-widget__chart">
-            <ChartErrorBoundary>
-              <RadialChart
-                sellerSegments={sellerSegments}
-                trafficBreakdown={trafficBreakdown}
-                filteredTotal={filteredTotal}
-                isInteractive={!isEditMode}
-              />
-            </ChartErrorBoundary>
-          </div>
-        </div>
-      )
-    case 'trafficBreakdown':
-      return (
-        <div className="metric-stack">
-          {trafficBreakdown.map((segment) => (
-            <div className="metric-row" key={segment.key}>
-              <div className="metric-row__left">
-                <p>{segment.longLabel}</p>
-                <small>{formatPercent(segment.percentage)}</small>
-              </div>
-              <strong>{formatCurrency(segment.value)}</strong>
-            </div>
-          ))}
-        </div>
-      )
-    case 'sellerContribution':
-      return (
-        <div className="progress-stack">
-          {sellerSegments.map((segment) => (
-            <div className="progress-row" key={segment.key}>
-              <div className="progress-row__meta">
-                <p>{segment.label}</p>
-                <span>{`${formatCurrency(segment.value)} | ${formatPercent(segment.percentage)}`}</span>
-              </div>
-              <div className="progress-track">
-                <span
-                  className="progress-fill"
-                  style={{
-                    width: `${Math.max(segment.percentage, 4)}%`,
-                    background: segment.color,
-                  }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      )
-    case 'kpiOverview': {
-      const adsSegment = trafficBreakdown.find((item) => item.key === 'ADS')
-      const organicSegment = trafficBreakdown.find((item) => item.key === 'Organic')
-
-      return (
-        <div className="kpi-grid">
-          <article className="kpi-card">
-            <p>Total Revenue</p>
-            <strong>{formatCurrency(filteredTotal)}</strong>
-          </article>
-          <article className="kpi-card">
-            <p>ADS Share</p>
-            <strong>{formatPercent(adsSegment?.percentage ?? 0)}</strong>
-            <small>{formatCurrency(adsSegment?.value ?? 0)}</small>
-          </article>
-          <article className="kpi-card">
-            <p>Organic Share</p>
-            <strong>{formatPercent(organicSegment?.percentage ?? 0)}</strong>
-            <small>{formatCurrency(organicSegment?.value ?? 0)}</small>
-          </article>
-        </div>
-      )
-    }
-    default:
-      return (
-        <div className="chart-error-state">
-          <p className="chart-error-state__title">Widget unavailable</p>
-          <p className="chart-error-state__body">
-            This widget configuration is no longer available.
-          </p>
-        </div>
-      )
-  }
+  return (
+    <div className="half-moon-widget">
+      <div className="half-moon-widget__filters widget-no-drag">
+        <FilterPanel sellerFilter={sellerFilter} onSellerChange={onSellerChange} />
+      </div>
+      <div className="half-moon-widget__chart">
+        <ChartErrorBoundary>
+          <RadialChart
+            sellerSegments={sellerSegments}
+            trafficBreakdown={trafficBreakdown}
+            filteredTotal={filteredTotal}
+            isInteractive={!isEditMode}
+            animationKey={sellerFilter}
+          />
+        </ChartErrorBoundary>
+      </div>
+    </div>
+  )
 }
 
 function App() {
-  const [sellerFilter, setSellerFilter] = useState(SELLER_FILTERS.ALL)
+  const [sellerFilter, setSellerFilter] = useState<SellerFilter>(SELLER_FILTERS.ALL)
   const [isEditMode, setIsEditMode] = useState(false)
-  const [savedLayoutItems, setSavedLayoutItems] = useState(() =>
+  const [savedLayoutItems, setSavedLayoutItems] = useState<LayoutItem[]>(() =>
     enforceFixedWidgetDimensions(loadInitialLayout()),
   )
-  const [draftLayoutItems, setDraftLayoutItems] = useState(null)
+  const [draftLayoutItems, setDraftLayoutItems] = useState<LayoutItem[] | null>(null)
   const [isGridDragging, setIsGridDragging] = useState(false)
+  const [gridWidth, setGridWidth] = useState(0)
 
-  const activeLayoutItems = useMemo(
+  const activeLayoutItems = useMemo<LayoutItem[]>(
     () =>
       enforceFixedWidgetDimensions(
         isEditMode ? draftLayoutItems ?? savedLayoutItems : savedLayoutItems,
@@ -279,13 +252,12 @@ function App() {
   const sellerSegments = useMemo(() => getFilteredSellerSegments(activeSellerKeys), [activeSellerKeys])
   const trafficBreakdown = useMemo(() => getTrafficBreakdown(activeSellerKeys), [activeSellerKeys])
 
-  const layout = useMemo(
-    () =>
-      activeLayoutItems.map(({ id, x, y, w, h }) => ({ i: id, x, y, w, h })),
+  const layout = useMemo<GridLayoutItem[]>(
+    () => activeLayoutItems.map(({ id, x, y, w, h }) => ({ i: id, x, y, w, h })),
     [activeLayoutItems],
   )
 
-  const widgetContext = useMemo(
+  const widgetContext = useMemo<WidgetContext>(
     () => ({
       sellerFilter,
       filteredTotal,
@@ -298,36 +270,58 @@ function App() {
   )
 
   const scaffoldRowCount = useMemo(() => {
-    const maxY = activeLayoutItems.reduce(
-      (highest, item) => Math.max(highest, item.y + item.h),
-      0,
-    )
+    const maxY = activeLayoutItems.reduce((highest, item) => Math.max(highest, item.y + item.h), 0)
     return Math.max(1, maxY)
   }, [activeLayoutItems])
 
   const showSlotScaffold = isEditMode && isGridDragging
+  const scaffoldColumnWidth = useMemo(() => {
+    if (!gridWidth) return null
+    const usableWidth =
+      gridWidth - GRID_CONTAINER_PADDING[0] * 2 - GRID_MARGIN[0] * (GRID_COLUMNS - 1)
+    return usableWidth > 0 ? usableWidth / GRID_COLUMNS : null
+  }, [gridWidth])
+
+  const scaffoldStyle = useMemo<ScaffoldStyle>(
+    () => ({
+      '--grid-columns': String(GRID_COLUMNS),
+      '--grid-row-height': `${GRID_ROW_HEIGHT}px`,
+      '--grid-gap-x': `${GRID_MARGIN[0]}px`,
+      '--grid-gap-y': `${GRID_MARGIN[1]}px`,
+      '--grid-pad-x': `${GRID_CONTAINER_PADDING[0]}px`,
+      '--grid-pad-y': `${GRID_CONTAINER_PADDING[1]}px`,
+      ...(scaffoldColumnWidth
+        ? { gridTemplateColumns: `repeat(${GRID_COLUMNS}, ${scaffoldColumnWidth}px)` }
+        : {}),
+    }),
+    [scaffoldColumnWidth],
+  )
+
+  const handleGridWidthChange = useCallback((width: number) => {
+    if (width > 0) setGridWidth(width)
+  }, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
     window.localStorage.setItem(STORAGE_KEY_V3, JSON.stringify(getStoragePayload(savedLayoutItems)))
   }, [savedLayoutItems])
 
-  const syncLayoutFromGrid = useCallback((nextLayout) => {
-    if (!isEditMode) return
+  const syncLayoutFromGrid = useCallback(
+    (nextLayout: GridLayoutItem[]) => {
+      if (!isEditMode) return
 
-    setDraftLayoutItems((currentItems) => {
-      if (!currentItems?.length) return currentItems
+      setDraftLayoutItems((currentItems) => {
+        if (!currentItems?.length) return currentItems
 
-      const existingById = new Map(currentItems.map((item) => [item.id, item]))
-      let hasChange = false
+        const byId = new Map(nextLayout.map((item) => [item.i, item]))
+        let hasChange = false
 
-      const nextItems = nextLayout
-        .map((layoutItem) => {
-          const existingItem = existingById.get(layoutItem.i)
-          if (!existingItem) return null
+        const nextItems = currentItems.map((existingItem) => {
+          const layoutItem = byId.get(existingItem.id)
+          if (!layoutItem) return existingItem
 
-          const widgetMeta = WIDGET_LIBRARY[existingItem.type]
-          const fixedWidth = widgetMeta?.layout.w ?? existingItem.w
+          const widgetMeta = WIDGET_LIBRARY[WIDGET_TYPE]
+          const fixedWidth = widgetMeta.layout.w
           const nextX = clamp(layoutItem.x, 0, Math.max(0, GRID_COLUMNS - fixedWidth))
           const nextY = Math.max(0, layoutItem.y)
 
@@ -335,11 +329,12 @@ function App() {
 
           return { ...existingItem, x: nextX, y: nextY }
         })
-        .filter(Boolean)
 
-      return hasChange ? sortLayoutItems(nextItems) : currentItems
-    })
-  }, [isEditMode])
+        return hasChange ? sortLayoutItems(nextItems) : currentItems
+      })
+    },
+    [isEditMode],
+  )
 
   const startLayoutEdit = useCallback(() => {
     setDraftLayoutItems(cloneLayoutItems(enforceFixedWidgetDimensions(savedLayoutItems)))
@@ -397,6 +392,7 @@ function App() {
             <div
               aria-hidden="true"
               className={`slot-scaffold ${showSlotScaffold ? 'is-visible' : ''}`}
+              style={scaffoldStyle}
             >
               {Array.from({ length: scaffoldRowCount * GRID_COLUMNS }, (_, index) => (
                 <span className="slot-scaffold__cell" key={`slot-${index}`} />
@@ -407,22 +403,23 @@ function App() {
               className={`dashboard-grid-layout ${isEditMode ? 'is-editing' : ''}`}
               cols={GRID_COLUMNS}
               compactType="vertical"
-              containerPadding={[10, 10]}
+              containerPadding={GRID_CONTAINER_PADDING}
               draggableCancel=".widget-no-drag,button,input,textarea,select,label,option"
               isBounded
               isDraggable={isEditMode}
               isResizable={false}
               layout={layout}
-              margin={[10, 10]}
+              margin={GRID_MARGIN}
               onDragStart={() => setIsGridDragging(true)}
-              onDragStop={(nextLayout) => {
+              onDragStop={(nextLayout: GridLayoutItem[]) => {
                 syncLayoutFromGrid(nextLayout)
                 setIsGridDragging(false)
               }}
               onLayoutChange={syncLayoutFromGrid}
+              onWidthChange={handleGridWidthChange}
               preventCollision={false}
               rowHeight={GRID_ROW_HEIGHT}
-              useCSSTransforms
+              useCSSTransforms={false}
             >
               {activeLayoutItems.map((widget) => {
                 const widgetMeta = WIDGET_LIBRARY[widget.type]
@@ -430,15 +427,13 @@ function App() {
 
                 return (
                   <div className="widget-grid-item" key={widget.id}>
-                    <article
-                      className={`widget-card widget-card--${widget.type} ${isEditMode ? 'is-editing' : ''}`}
-                    >
+                    <article className={`widget-card widget-card--${widget.type} ${isEditMode ? 'is-editing' : ''}`}>
                       <header className="widget-card__header">
                         <h3>{widgetMeta.title}</h3>
                       </header>
                       <div className={`widget-card__body widget-card__body--${widget.type}`}>
                         <div className={`widget-content-probe widget-content-probe--${widget.type}`}>
-                          {renderWidgetBody(widget.type, widgetContext)}
+                          {renderRevenueWidget(widgetContext)}
                         </div>
                       </div>
                     </article>

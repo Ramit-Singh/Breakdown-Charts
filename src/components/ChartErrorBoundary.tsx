@@ -1,23 +1,33 @@
-import { Component } from 'react'
+import { Component, type ReactNode } from 'react'
 
-class ChartErrorBoundary extends Component {
-  constructor(props) {
+interface ChartErrorBoundaryProps {
+  children: ReactNode
+}
+
+interface ChartErrorBoundaryState {
+  hasError: boolean
+  message: string
+}
+
+class ChartErrorBoundary extends Component<ChartErrorBoundaryProps, ChartErrorBoundaryState> {
+  constructor(props: ChartErrorBoundaryProps) {
     super(props)
     this.state = { hasError: false, message: '' }
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(error: unknown): ChartErrorBoundaryState {
     return {
       hasError: true,
       message: error instanceof Error ? error.message : 'Unknown chart error',
     }
   }
 
-  componentDidCatch(error) {
+  componentDidCatch(error: unknown): void {
+    // eslint-disable-next-line no-console
     console.error('Chart render failed:', error)
   }
 
-  render() {
+  render(): ReactNode {
     if (this.state.hasError) {
       return (
         <div className="chart-error-state">

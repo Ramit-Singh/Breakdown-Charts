@@ -1,11 +1,40 @@
-//radial charts
 import { AgCharts } from 'ag-charts-react'
-import { formatCurrency, formatPercent } from '../data'
+import {
+  formatCurrency,
+  formatPercent,
+  type SellerSegment,
+  type TrafficSegment,
+} from '../data'
 
-function buildHalfMoonData(segments, filteredTotal, labelAccessor) {
-  const visibleSegments = segments.map((segment) => ({
+type SegmentDatum = SellerSegment | TrafficSegment
+
+interface HalfMoonDatum {
+  key: string
+  label: string
+  longLabel: string
+  value: number
+  color: string
+  isFiller: boolean
+  showLabel?: boolean
+}
+
+interface RadialChartProps {
+  sellerSegments: SellerSegment[]
+  trafficBreakdown: TrafficSegment[]
+  filteredTotal: number
+  isInteractive?: boolean
+  animationKey?: string
+}
+
+function buildHalfMoonData(
+  segments: SegmentDatum[],
+  filteredTotal: number,
+  labelAccessor: (segment: SegmentDatum) => string,
+): HalfMoonDatum[] {
+  const visibleSegments: HalfMoonDatum[] = segments.map((segment) => ({
     ...segment,
     label: labelAccessor(segment),
+    longLabel: 'longLabel' in segment ? segment.longLabel : segment.label,
     isFiller: false,
   }))
 
@@ -22,8 +51,8 @@ function buildHalfMoonData(segments, filteredTotal, labelAccessor) {
   ]
 }
 
-function makeTooltipRenderer(filteredTotal) {
-  return ({ datum }) => {
+function makeTooltipRenderer(filteredTotal: number) {
+  return ({ datum }: { datum: HalfMoonDatum }) => {
     if (
       datum.isFiller ||
       datum.key === '__filler__' ||
@@ -38,9 +67,7 @@ function makeTooltipRenderer(filteredTotal) {
         { label: 'Revenue', value: formatCurrency(datum.value) },
         {
           label: '% of Filter',
-          value: formatPercent(
-            filteredTotal ? (datum.value / filteredTotal) * 100 : 0,
-          ),
+          value: formatPercent(filteredTotal ? (datum.value / filteredTotal) * 100 : 0),
         },
       ],
     }
@@ -48,7 +75,7 @@ function makeTooltipRenderer(filteredTotal) {
 }
 
 function makeSectorLabelFormatter() {
-  return ({ datum }) => (datum.isFiller ? '' : datum.label)
+  return ({ datum }: { datum: HalfMoonDatum }) => (datum.isFiller ? '' : datum.label)
 }
 
 function RadialChart({
@@ -56,7 +83,8 @@ function RadialChart({
   trafficBreakdown,
   filteredTotal,
   isInteractive = true,
-}) {
+  animationKey = 'default',
+}: RadialChartProps) {
   const sellerData = buildHalfMoonData(
     sellerSegments,
     filteredTotal,
@@ -106,7 +134,8 @@ function RadialChart({
     legend: { enabled: false },
     padding: { top: 0, right: 8, bottom: 0, left: 8 },
     animation: {
-      enabled: false,
+      enabled: true,
+      duration: 350,
     },
     tooltip: isInteractive
       ? {
@@ -156,7 +185,11 @@ function RadialChart({
   return (
     <div className="radial-chart-shell">
       <div className="radial-chart-visual">
-        <AgCharts options={options} className="chart-frame chart-frame--radial" />
+        <AgCharts
+          key={animationKey}
+          options={options}
+          className="chart-frame chart-frame--radial"
+        />
         <div className="radial-center-copy">
           <p className="radial-total">{formatCurrency(filteredTotal)}</p>
         </div>
@@ -166,4 +199,3 @@ function RadialChart({
 }
 
 export default RadialChart
-

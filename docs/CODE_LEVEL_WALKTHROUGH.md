@@ -4,13 +4,13 @@ This document explains exactly how the dashboard is implemented so you can expla
 
 ## 1) High-level architecture
 
-1. Entry point is `src/main.jsx`.
-2. App orchestration, grid state, edit workflow, and widget rendering live in `src/App.jsx`.
-3. Data model, filtering selectors, and formatters live in `src/data.js`.
+1. Entry point is `src/main.tsx`.
+2. App orchestration, grid state, edit workflow, and widget rendering live in `src/App.tsx`.
+3. Data model, filtering selectors, and formatters live in `src/data.ts`.
 4. UI components:
-   - `src/components/FilterPanel.jsx`
-   - `src/components/RadialChart.jsx`
-   - `src/components/ChartErrorBoundary.jsx`
+   - `src/components/FilterPanel.tsx`
+   - `src/components/RadialChart.tsx`
+   - `src/components/ChartErrorBoundary.tsx`
 5. Styling and layout behavior are in `src/styles/app.css`.
 
 ## 2) Runtime and dependencies
@@ -30,7 +30,7 @@ Dependencies from `package.json` and what each one is used for:
 6. `eslint` and plugins
    - Static analysis and hook correctness checks.
 
-In `src/main.jsx`, AG enterprise features are initialized once:
+In `src/main.tsx`, AG enterprise features are initialized once:
 
 ```jsx
 AgChartsEnterpriseModule.setup()
@@ -38,7 +38,7 @@ AgChartsEnterpriseModule.setup()
 
 ## 3) Data model and selector pipeline
 
-All business data logic is centralized in `src/data.js`.
+All business data logic is centralized in `src/data.ts`.
 
 1. `RAW_DATA`
    - Source numbers per seller channel (`1P`, `FBA`, `MFN`), split by `ADS` and `Organic`.
@@ -67,7 +67,7 @@ Why this matters:
 
 ### 4.1 Layout metadata
 
-In `src/App.jsx`:
+In `src/App.tsx`:
 
 1. `WIDGET_LIBRARY`
    - Defines each widget type and default `x, y, w, h`.
@@ -113,7 +113,7 @@ This is why users can move cards but cannot resize them.
 
 ## 5) Edit mode workflow (Save/Cancel draft model)
 
-`src/App.jsx` uses separate committed and draft states:
+`src/App.tsx` uses separate committed and draft states:
 
 1. `savedLayoutItems`
    - Source of truth in view mode.
@@ -171,7 +171,7 @@ Drag scaffold:
 
 ## 7) Widget composition and rendering
 
-`renderWidgetBody(widgetType, context)` is the routing layer in `src/App.jsx`.
+`renderWidgetBody(widgetType, context)` is the routing layer in `src/App.tsx`.
 
 Widgets:
 
@@ -189,7 +189,7 @@ The card title/header shell is rendered once in the main grid map and body conte
 
 ## 8) Filter component internals
 
-`src/components/FilterPanel.jsx`:
+`src/components/FilterPanel.tsx`:
 
 1. Top pills are restricted to `All`, `1P`, `3P`.
 2. `is3PContext` is true for `3P`, `FBA`, or `MFN`.
@@ -200,7 +200,7 @@ So FilterPanel is presentation and event emission. State ownership stays in App.
 
 ## 9) Radial chart internals
 
-`src/components/RadialChart.jsx`:
+`src/components/RadialChart.tsx`:
 
 1. `buildHalfMoonData()`
    - Appends transparent `__filler__` datum so donut appears as half-moon.
@@ -220,7 +220,7 @@ Important behavior:
 
 ## 10) Error boundary strategy
 
-`src/components/ChartErrorBoundary.jsx` is a class component boundary:
+`src/components/ChartErrorBoundary.tsx` is a class component boundary:
 
 1. Captures chart render exceptions.
 2. Logs error with `componentDidCatch`.
@@ -254,7 +254,7 @@ Patterns used in implementation:
 1. Hook-driven state + memoized derivations (`useState`, `useMemo`, `useCallback`, `useEffect`).
 2. Immutable transforms (`map`, `filter`, `reduce`) for predictable updates.
 3. Defensive normalization at I/O boundaries (layout read/write).
-4. Single-source data derivation from selectors in `data.js`.
+4. Single-source data derivation from selectors in `data.ts`.
 5. Separation of concerns:
    - App for orchestration.
    - Components for specific rendering concerns.
@@ -277,6 +277,8 @@ Use this when someone asks, "How did you build it?"
 1. "We used React + react-grid-layout for a 12-column drag-only dashboard canvas."
 2. "Layout state is split into saved and draft; edit mode modifies draft, Save commits, Cancel discards."
 3. "We persist normalized `{id,type,x,y,w,h}` layout items in localStorage and enforce fixed widget dimensions by type."
-4. "Filters are centralized in App state and drive selectors in `data.js`, so all widgets react consistently."
+4. "Filters are centralized in App state and drive selectors in `data.ts`, so all widgets react consistently."
 5. "The half-moon chart is two layered donut series in AG Charts plus a transparent filler slice to hide half the circle, with a center-value HTML overlay."
 6. "We wrapped charts in an error boundary and disabled chart pointer interactions in edit mode to prioritize dragging."
+
+
