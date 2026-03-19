@@ -20,8 +20,6 @@ const AutoWidthGridLayout = WidthProvider(GridLayout)
 const STORAGE_KEY_V3 = 'amazon-revenue-layout-v3'
 const GRID_COLUMNS = 12
 const GRID_ROW_HEIGHT = 16
-const GRID_MARGIN = [10, 10]
-const GRID_CONTAINER_PADDING = [10, 10]
 
 const WIDGET_LIBRARY = {
   revenueHalfMoon: {
@@ -68,25 +66,20 @@ function enforceFixedWidgetDimensions(layoutItems) {
 
   const normalized = layoutItems
     .map((item) => {
-    const widgetMeta = WIDGET_LIBRARY[item.type]
-    if (!widgetMeta) {
-      hasChange = true
-      return null
-    }
-
-    const width = widgetMeta.layout.w
-    const height = widgetMeta.layout.h
-    const nextX = clamp(item.x, 0, Math.max(0, GRID_COLUMNS - width))
-
-    if (item.w !== width || item.h !== height || item.x !== nextX) {
-      hasChange = true
-      return {
-        ...item,
-        x: nextX,
-        w: width,
-        h: height,
+      const widgetMeta = WIDGET_LIBRARY[item.type]
+      if (!widgetMeta) {
+        hasChange = true
+        return null
       }
-    }
+
+      const width = widgetMeta.layout.w
+      const height = widgetMeta.layout.h
+      const nextX = clamp(item.x, 0, Math.max(0, GRID_COLUMNS - width))
+
+      if (item.w !== width || item.h !== height || item.x !== nextX) {
+        hasChange = true
+        return { ...item, x: nextX, w: width, h: height }
+      }
 
       return item
     })
@@ -110,28 +103,19 @@ function loadInitialLayout() {
 
   try {
     const v3Raw = window.localStorage.getItem(STORAGE_KEY_V3)
-    if (!v3Raw) {
-      return getDefaultLayoutItems()
-    }
+    if (!v3Raw) return getDefaultLayoutItems()
 
     const parsedV3 = JSON.parse(v3Raw)
-    if (!Array.isArray(parsedV3)) {
-      return getDefaultLayoutItems()
-    }
+    if (!Array.isArray(parsedV3)) return getDefaultLayoutItems()
 
     const seenIds = new Set()
     const normalized = parsedV3
       .map((item) => {
-        if (!item || typeof item !== 'object' || typeof item.type !== 'string') {
-          return null
-        }
+        if (!item || typeof item !== 'object' || typeof item.type !== 'string') return null
 
         const widgetMeta = WIDGET_LIBRARY[item.type]
-        if (!widgetMeta) {
-          return null
-        }
+        if (!widgetMeta) return null
 
-        // Drag-only mode: widget sizes are fixed by widget type.
         const width = widgetMeta.layout.w
         const height = widgetMeta.layout.h
         const xValue = Number(item.x)
@@ -144,19 +128,10 @@ function loadInitialLayout() {
         const y = Math.max(0, Number.isFinite(yValue) ? Math.floor(yValue) : widgetMeta.layout.y)
         const id = typeof item.id === 'string' && item.id ? item.id : item.type
 
-        if (seenIds.has(id)) {
-          return null
-        }
-
+        if (seenIds.has(id)) return null
         seenIds.add(id)
-        return {
-          id,
-          type: item.type,
-          x,
-          y,
-          w: width,
-          h: height,
-        }
+
+        return { id, type: item.type, x, y, w: width, h: height }
       })
       .filter(Boolean)
 
@@ -167,23 +142,13 @@ function loadInitialLayout() {
 }
 
 function getStoragePayload(layoutItems) {
-  return layoutItems.map((item) => ({
-    id: item.id,
-    type: item.type,
-    x: item.x,
-    y: item.y,
-    w: item.w,
-    h: item.h,
-  }))
+  return layoutItems.map(({ id, type, x, y, w, h }) => ({ id, type, x, y, w, h }))
 }
 
 function PencilIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" className="icon-svg" focusable="false">
-      <path
-        d="M4 16.25V20h3.75L19.81 7.94l-3.75-3.75L4 16.25z"
-        fill="currentColor"
-      />
+      <path d="M4 16.25V20h3.75L19.81 7.94l-3.75-3.75L4 16.25z" fill="currentColor" />
       <path
         d="M20.71 6.04a1 1 0 000-1.41l-1.34-1.34a1 1 0 00-1.41 0l-1.04 1.04 3.75 3.75 1.04-1z"
         fill="currentColor"
@@ -207,10 +172,7 @@ function renderWidgetBody(widgetType, context) {
       return (
         <div className="half-moon-widget">
           <div className="half-moon-widget__filters widget-no-drag">
-            <FilterPanel
-              sellerFilter={sellerFilter}
-              onSellerChange={onSellerChange}
-            />
+            <FilterPanel sellerFilter={sellerFilter} onSellerChange={onSellerChange} />
           </div>
           <div className="half-moon-widget__chart">
             <ChartErrorBoundary>
@@ -262,9 +224,7 @@ function renderWidgetBody(widgetType, context) {
       )
     case 'kpiOverview': {
       const adsSegment = trafficBreakdown.find((item) => item.key === 'ADS')
-      const organicSegment = trafficBreakdown.find(
-        (item) => item.key === 'Organic',
-      )
+      const organicSegment = trafficBreakdown.find((item) => item.key === 'Organic')
 
       return (
         <div className="kpi-grid">
@@ -314,35 +274,14 @@ function App() {
     [draftLayoutItems, isEditMode, savedLayoutItems],
   )
 
-  const activeSellerKeys = useMemo(
-    () => getVisibleSellers(sellerFilter),
-    [sellerFilter],
-  )
-
-  const filteredTotal = useMemo(
-    () => getFilteredTotal(activeSellerKeys),
-    [activeSellerKeys],
-  )
-
-  const sellerSegments = useMemo(
-    () => getFilteredSellerSegments(activeSellerKeys),
-    [activeSellerKeys],
-  )
-
-  const trafficBreakdown = useMemo(
-    () => getTrafficBreakdown(activeSellerKeys),
-    [activeSellerKeys],
-  )
+  const activeSellerKeys = useMemo(() => getVisibleSellers(sellerFilter), [sellerFilter])
+  const filteredTotal = useMemo(() => getFilteredTotal(activeSellerKeys), [activeSellerKeys])
+  const sellerSegments = useMemo(() => getFilteredSellerSegments(activeSellerKeys), [activeSellerKeys])
+  const trafficBreakdown = useMemo(() => getTrafficBreakdown(activeSellerKeys), [activeSellerKeys])
 
   const layout = useMemo(
     () =>
-      activeLayoutItems.map((item) => ({
-        i: item.id,
-        x: item.x,
-        y: item.y,
-        w: item.w,
-        h: item.h,
-      })),
+      activeLayoutItems.map(({ id, x, y, w, h }) => ({ i: id, x, y, w, h })),
     [activeLayoutItems],
   )
 
@@ -355,13 +294,7 @@ function App() {
       onSellerChange: setSellerFilter,
       isEditMode,
     }),
-    [
-      sellerFilter,
-      filteredTotal,
-      sellerSegments,
-      trafficBreakdown,
-      isEditMode,
-    ],
+    [sellerFilter, filteredTotal, sellerSegments, trafficBreakdown, isEditMode],
   )
 
   const scaffoldRowCount = useMemo(() => {
@@ -375,25 +308,15 @@ function App() {
   const showSlotScaffold = isEditMode && isGridDragging
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
-    }
-
-    window.localStorage.setItem(
-      STORAGE_KEY_V3,
-      JSON.stringify(getStoragePayload(savedLayoutItems)),
-    )
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem(STORAGE_KEY_V3, JSON.stringify(getStoragePayload(savedLayoutItems)))
   }, [savedLayoutItems])
 
   const syncLayoutFromGrid = useCallback((nextLayout) => {
-    if (!isEditMode) {
-      return
-    }
+    if (!isEditMode) return
 
     setDraftLayoutItems((currentItems) => {
-      if (!currentItems?.length) {
-        return currentItems
-      }
+      if (!currentItems?.length) return currentItems
 
       const existingById = new Map(currentItems.map((item) => [item.id, item]))
       let hasChange = false
@@ -401,31 +324,20 @@ function App() {
       const nextItems = nextLayout
         .map((layoutItem) => {
           const existingItem = existingById.get(layoutItem.i)
-          if (!existingItem) {
-            return null
-          }
+          if (!existingItem) return null
 
           const widgetMeta = WIDGET_LIBRARY[existingItem.type]
           const fixedWidth = widgetMeta?.layout.w ?? existingItem.w
           const nextX = clamp(layoutItem.x, 0, Math.max(0, GRID_COLUMNS - fixedWidth))
           const nextY = Math.max(0, layoutItem.y)
-          if (nextX !== existingItem.x || nextY !== existingItem.y) {
-            hasChange = true
-          }
 
-          return {
-            ...existingItem,
-            x: nextX,
-            y: nextY,
-          }
+          if (nextX !== existingItem.x || nextY !== existingItem.y) hasChange = true
+
+          return { ...existingItem, x: nextX, y: nextY }
         })
         .filter(Boolean)
 
-      if (!hasChange) {
-        return currentItems
-      }
-
-      return sortLayoutItems(nextItems)
+      return hasChange ? sortLayoutItems(nextItems) : currentItems
     })
   }, [isEditMode])
 
@@ -447,7 +359,6 @@ function App() {
         sortLayoutItems(cloneLayoutItems(enforceFixedWidgetDimensions(draftLayoutItems))),
       )
     }
-
     setIsGridDragging(false)
     setIsEditMode(false)
     setDraftLayoutItems(null)
@@ -457,28 +368,19 @@ function App() {
     <main className={`analytics-shell ${isEditMode ? 'is-editing' : ''}`}>
       <header className="analytics-header">
         <div className="analytics-header__left">
-          <h1 className='header-text'>Analytics</h1>
+          <h1 className="header-text">Analytics</h1>
         </div>
 
         <div className="analytics-header__actions">
           {!isEditMode && (
-            <button
-              className="action-btn action-btn--edit"
-              onClick={startLayoutEdit}
-              type="button"
-            >
+            <button className="action-btn action-btn--edit" onClick={startLayoutEdit} type="button">
               <PencilIcon />
               Edit Layout
             </button>
           )}
-
           {isEditMode && (
             <>
-              <button
-                className="action-btn action-btn--edit is-active"
-                onClick={saveLayoutEdit}
-                type="button"
-              >
+              <button className="action-btn action-btn--edit is-active" onClick={saveLayoutEdit} type="button">
                 Save
               </button>
               <button className="action-btn" onClick={cancelLayoutEdit} type="button">
@@ -491,9 +393,7 @@ function App() {
 
       <section className="dashboard-workspace">
         <section className="dashboard-main">
-          <div
-            className={`dashboard-grid-shell ${showSlotScaffold ? 'is-guided' : ''}`}
-          >
+          <div className={`dashboard-grid-shell ${showSlotScaffold ? 'is-guided' : ''}`}>
             <div
               aria-hidden="true"
               className={`slot-scaffold ${showSlotScaffold ? 'is-visible' : ''}`}
@@ -507,13 +407,13 @@ function App() {
               className={`dashboard-grid-layout ${isEditMode ? 'is-editing' : ''}`}
               cols={GRID_COLUMNS}
               compactType="vertical"
-              containerPadding={GRID_CONTAINER_PADDING}
+              containerPadding={[10, 10]}
               draggableCancel=".widget-no-drag,button,input,textarea,select,label,option"
               isBounded
               isDraggable={isEditMode}
               isResizable={false}
               layout={layout}
-              margin={GRID_MARGIN}
+              margin={[10, 10]}
               onDragStart={() => setIsGridDragging(true)}
               onDragStop={(nextLayout) => {
                 syncLayoutFromGrid(nextLayout)
@@ -526,9 +426,7 @@ function App() {
             >
               {activeLayoutItems.map((widget) => {
                 const widgetMeta = WIDGET_LIBRARY[widget.type]
-                if (!widgetMeta) {
-                  return null
-                }
+                if (!widgetMeta) return null
 
                 return (
                   <div className="widget-grid-item" key={widget.id}>
@@ -538,7 +436,6 @@ function App() {
                       <header className="widget-card__header">
                         <h3>{widgetMeta.title}</h3>
                       </header>
-
                       <div className={`widget-card__body widget-card__body--${widget.type}`}>
                         <div className={`widget-content-probe widget-content-probe--${widget.type}`}>
                           {renderWidgetBody(widget.type, widgetContext)}

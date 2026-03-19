@@ -1,3 +1,4 @@
+/* app.css */
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
 
 :root {
@@ -53,6 +54,8 @@ select {
   font: inherit;
 }
 
+/* ─── App shell ─────────────────────────────────────────── */
+
 .analytics-shell {
   max-width: 1720px;
   margin: 0 auto;
@@ -69,22 +72,6 @@ select {
 .analytics-header__left {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-
-.analytics-header__left h1 {
-  margin: 0;
-  font-size: 2rem;
-  letter-spacing: -0.02em;
-  font-weight: 700;
-}
-
-.analytics-header__left p {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 0.88rem;
-  display: inline-flex;
-  align-items: center;
   gap: 8px;
 }
 
@@ -125,34 +112,15 @@ select {
   height: 15px;
 }
 
-.analytics-toolbar {
-  margin-top: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-bottom: 14px;
-}
-
 .header-text {
   font-size: 2.3rem;
   font-weight: 500;
   color: #251f25;
   padding-bottom: 1.5rem;
-}
-.toolbar-chip {
-  height: 30px;
-  border: 1px solid #d5dce5;
-  border-radius: 8px;
-  background: #ffffff;
-  padding: 0 12px;
-  font-size: 0.82rem;
-  color: #374151;
-  cursor: pointer;
+  margin: 0;
 }
 
-.toolbar-chip:hover {
-  border-color: #bec8d6;
-}
+/* ─── Dashboard workspace ───────────────────────────────── */
 
 .dashboard-workspace {
   display: grid;
@@ -164,15 +132,7 @@ select {
   min-width: 0;
 }
 
-.dashboard-main__heading {
-  margin: 1px 2px 8px;
-}
-
-.dashboard-main__heading h2 {
-  margin: 0;
-  font-size: 1.02rem;
-  font-weight: 700;
-}
+/* ─── Grid shell ────────────────────────────────────────── */
 
 .dashboard-grid-shell {
   position: relative;
@@ -225,6 +185,8 @@ select {
   background: rgba(22, 134, 255, 0.16) !important;
   opacity: 1 !important;
 }
+
+/* ─── Widget card frame ─────────────────────────────────── */
 
 .widget-grid-item,
 .widget-card {
@@ -303,12 +265,15 @@ select {
   padding-top: 6px;
 }
 
+/* Disable chart pointer events in edit mode to prioritize drag */
 .widget-card.is-editing .chart-frame,
 .widget-card.is-editing .chart-frame *,
 .widget-card.is-editing .ag-charts-wrapper,
 .widget-card.is-editing .ag-charts-wrapper * {
   pointer-events: none !important;
 }
+
+/* ─── Revenue half-moon widget ──────────────────────────── */
 
 .half-moon-widget {
   height: 100%;
@@ -399,6 +364,8 @@ select {
   color: #111b34;
 }
 
+/* ─── Traffic breakdown widget ──────────────────────────── */
+
 .metric-stack {
   margin-top: 0;
   display: grid;
@@ -440,6 +407,8 @@ select {
   font-size: 0.9rem;
   font-weight: 600;
 }
+
+/* ─── Seller contribution widget ────────────────────────── */
 
 .progress-stack {
   margin-top: 2px;
@@ -494,6 +463,8 @@ select {
   font-size: 0.74rem;
 }
 
+/* ─── KPI overview widget ───────────────────────────────── */
+
 .kpi-grid {
   margin-top: 2px;
   display: grid;
@@ -537,6 +508,8 @@ select {
   font-size: 0.74rem;
 }
 
+/* ─── Error state ───────────────────────────────────────── */
+
 .chart-error-state {
   display: grid;
   place-items: center;
@@ -560,6 +533,8 @@ select {
   font-size: 0.8rem;
   line-height: 1.5;
 }
+
+/* ─── Filter panel ──────────────────────────────────────── */
 
 .filter-panel-v2 {
   display: block;
@@ -675,6 +650,8 @@ select {
   transform: translate(-50%, -50%) scale(1);
 }
 
+/* ─── AG Charts tooltips ────────────────────────────────── */
+
 .ag-dashboard-tooltip {
   border-radius: 12px;
   overflow: hidden;
@@ -704,6 +681,8 @@ select {
   padding: 8px 16px 12px !important;
 }
 
+/* ─── Responsive ────────────────────────────────────────── */
+
 @media (max-width: 900px) {
   .analytics-shell {
     padding: 14px 10px 24px;
@@ -719,14 +698,6 @@ select {
     justify-content: flex-start;
   }
 
-  .analytics-toolbar {
-  margin-top: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-bottom: 14px;
-}
-
   .dashboard-grid-layout {
     min-height: 0;
   }
@@ -740,25 +711,3 @@ select {
     grid-auto-rows: 14px;
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
