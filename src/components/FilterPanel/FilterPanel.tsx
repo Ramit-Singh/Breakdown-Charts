@@ -3,7 +3,8 @@ import {
   SELLER_FILTERS,
   type FilterOption,
   type SellerFilter,
-} from '../data'
+} from '../../data'
+import './FilterPanel.css'
 
 interface FilterPanelProps {
   sellerFilter: SellerFilter
@@ -80,3 +81,5 @@ function FilterPanel({ sellerFilter, onSellerChange }: FilterPanelProps) {
 }
 
 export default FilterPanel
+
+

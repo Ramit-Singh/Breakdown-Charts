@@ -1,0 +1,255 @@
+.analytics-shell {
+  max-width: 1720px;
+  margin: 0 auto;
+  padding: 18px 14px 28px;
+}
+
+.analytics-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.analytics-header__left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.analytics-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.action-btn {
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid #cfd5df;
+  background: #ffffff;
+  color: var(--text-primary);
+  padding: 0 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.action-btn:hover {
+  border-color: #bcc5d2;
+  background: #fafafa;
+}
+
+.action-btn--edit.is-active {
+  border-color: var(--accent);
+  color: #145ec2;
+  background: var(--accent-soft);
+}
+
+.icon-svg {
+  width: 15px;
+  height: 15px;
+}
+
+.header-text {
+  font-size: 2.3rem;
+  font-weight: 500;
+  color: #251f25;
+  padding-bottom: 1.5rem;
+  margin: 0;
+}
+
+.dashboard-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.dashboard-main {
+  min-width: 0;
+}
+
+.dashboard-grid-shell {
+  position: relative;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  min-height: 0;
+}
+
+.dashboard-grid-shell.is-guided {
+  border-color: #8fc2ff;
+  background: linear-gradient(180deg, rgba(20, 132, 255, 0.07), rgba(20, 132, 255, 0.03));
+}
+
+.slot-scaffold {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--grid-columns, 12), minmax(0, 1fr));
+  grid-auto-rows: var(--grid-row-height, 16px);
+  column-gap: var(--grid-gap-x, 10px);
+  row-gap: var(--grid-gap-y, 10px);
+  opacity: 0;
+  pointer-events: none;
+  padding: var(--grid-pad-y, 0) var(--grid-pad-x, 0);
+  z-index: 0;
+}
+
+.slot-scaffold.is-visible {
+  opacity: 1;
+}
+
+.slot-scaffold__cell {
+  box-sizing: border-box;
+  border: 1.5px dashed #d5dae2;
+  border-radius: 8px;
+  background: rgba(245, 247, 250, 0.74);
+}
+
+.dashboard-grid-layout {
+  position: relative;
+  min-height: 0;
+  z-index: 1;
+}
+
+.dashboard-grid-layout .react-grid-item {
+  transition: box-shadow 120ms ease;
+}
+
+.dashboard-grid-layout .react-grid-item.react-grid-placeholder {
+  box-sizing: border-box;
+  border: 2px dashed var(--accent);
+  border-radius: 14px;
+  background: rgba(22, 134, 255, 0.16) !important;
+  opacity: 1 !important;
+}
+
+.widget-grid-item,
+.widget-card {
+  height: 100%;
+}
+
+.widget-card {
+  background: #fff;
+  border: 1px solid #d9dee7;
+  border-radius: 14px;
+  box-shadow: var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.widget-card__header {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px 8px;
+}
+
+.widget-card__header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+
+.widget-card__body {
+  min-height: 0;
+  flex: 1;
+  padding: 8px 16px 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.widget-content-probe {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.widget-content-probe--revenueHalfMoon {
+  width: min(100%, 980px);
+  margin: 0 auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.widget-card__body--revenueHalfMoon {
+  align-items: stretch;
+  min-height: 0;
+  padding-top: 6px;
+}
+
+.widget-card.is-editing .chart-frame,
+.widget-card.is-editing .chart-frame *,
+.widget-card.is-editing .ag-charts-wrapper,
+.widget-card.is-editing .ag-charts-wrapper * {
+  pointer-events: none !important;
+}
+
+.half-moon-widget {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  margin: 0;
+  min-height: 0;
+}
+
+.half-moon-widget__filters {
+  align-self: flex-start;
+  margin-left: 0;
+  margin-right: auto;
+  max-width: 100%;
+}
+
+.half-moon-widget__chart {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+}
+
+.half-moon-widget__chart > * {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.chart-frame {
+  width: 100%;
+}
+
+.chart-frame > div {
+  width: 100%;
+  height: 100% !important;
+}
+
+@media (max-width: 900px) {
+  .analytics-shell {
+    padding: 14px 10px 24px;
+  }
+
+  .analytics-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .analytics-header__actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .dashboard-grid-layout {
+    min-height: 0;
+  }
+
+  .widget-card__body {
+    padding: 6px 14px 14px;
+  }
+}

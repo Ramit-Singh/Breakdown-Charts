@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { AgChartsEnterpriseModule } from 'ag-charts-enterprise'
-import './index.css'
+import './styles/base.css'
 import App from './App'
 
 AgChartsEnterpriseModule.setup()

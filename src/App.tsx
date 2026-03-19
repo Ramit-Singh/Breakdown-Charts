@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
-import GridLayout, { WidthProvider } from 'react-grid-layout/legacy'
-import ChartErrorBoundary from './components/ChartErrorBoundary'
-import FilterPanel from './components/FilterPanel'
-import RadialChart from './components/RadialChart'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import GridLayout, { WidthProvider, type Layout as RglLayout } from 'react-grid-layout/legacy'
+import ChartErrorBoundary from './components/ChartErrorBoundary/ChartErrorBoundary'
+import FilterPanel from './components/FilterPanel/FilterPanel'
+import RadialChart from './components/RadialChart/RadialChart'
 import {
   SELLER_FILTERS,
   getFilteredSellerSegments,
@@ -14,7 +14,7 @@ import {
   type TrafficSegment,
 } from './data'
 import 'react-grid-layout/css/styles.css'
-import './styles/app.css'
+import './styles/dashboard.css'
 
 const AutoWidthGridLayout = WidthProvider(GridLayout)
 
@@ -41,14 +41,6 @@ interface WidgetDefinition {
 interface LayoutItem extends WidgetLayoutDefinition {
   id: string
   type: WidgetType
-}
-
-interface GridLayoutItem {
-  i: string
-  x: number
-  y: number
-  w: number
-  h: number
 }
 
 interface WidgetContext {
@@ -238,6 +230,7 @@ function App() {
   const [draftLayoutItems, setDraftLayoutItems] = useState<LayoutItem[] | null>(null)
   const [isGridDragging, setIsGridDragging] = useState(false)
   const [gridWidth, setGridWidth] = useState(0)
+  const gridShellRef = useRef<HTMLDivElement | null>(null)
 
   const activeLayoutItems = useMemo<LayoutItem[]>(
     () =>
@@ -252,7 +245,7 @@ function App() {
   const sellerSegments = useMemo(() => getFilteredSellerSegments(activeSellerKeys), [activeSellerKeys])
   const trafficBreakdown = useMemo(() => getTrafficBreakdown(activeSellerKeys), [activeSellerKeys])
 
-  const layout = useMemo<GridLayoutItem[]>(
+  const layout = useMemo<RglLayout>(
     () => activeLayoutItems.map(({ id, x, y, w, h }) => ({ i: id, x, y, w, h })),
     [activeLayoutItems],
   )
@@ -297,8 +290,26 @@ function App() {
     [scaffoldColumnWidth],
   )
 
-  const handleGridWidthChange = useCallback((width: number) => {
-    if (width > 0) setGridWidth(width)
+  useEffect(() => {
+    const shellNode = gridShellRef.current
+    if (!shellNode || typeof ResizeObserver === 'undefined') return
+
+    const updateGridWidth = () => {
+      const nextWidth = shellNode.clientWidth
+      if (nextWidth > 0) setGridWidth(nextWidth)
+    }
+
+    updateGridWidth()
+
+    const observer = new ResizeObserver(() => {
+      updateGridWidth()
+    })
+
+    observer.observe(shellNode)
+
+    return () => {
+      observer.disconnect()
+    }
   }, [])
 
   useEffect(() => {
@@ -307,7 +318,7 @@ function App() {
   }, [savedLayoutItems])
 
   const syncLayoutFromGrid = useCallback(
-    (nextLayout: GridLayoutItem[]) => {
+    (nextLayout: RglLayout) => {
       if (!isEditMode) return
 
       setDraftLayoutItems((currentItems) => {
@@ -388,7 +399,7 @@ function App() {
 
       <section className="dashboard-workspace">
         <section className="dashboard-main">
-          <div className={`dashboard-grid-shell ${showSlotScaffold ? 'is-guided' : ''}`}>
+          <div ref={gridShellRef} className={`dashboard-grid-shell ${showSlotScaffold ? 'is-guided' : ''}`}>
             <div
               aria-hidden="true"
               className={`slot-scaffold ${showSlotScaffold ? 'is-visible' : ''}`}
@@ -411,12 +422,11 @@ function App() {
               layout={layout}
               margin={GRID_MARGIN}
               onDragStart={() => setIsGridDragging(true)}
-              onDragStop={(nextLayout: GridLayoutItem[]) => {
+              onDragStop={(nextLayout: RglLayout) => {
                 syncLayoutFromGrid(nextLayout)
                 setIsGridDragging(false)
               }}
               onLayoutChange={syncLayoutFromGrid}
-              onWidthChange={handleGridWidthChange}
               preventCollision={false}
               rowHeight={GRID_ROW_HEIGHT}
               useCSSTransforms={false}
@@ -449,3 +459,4 @@ function App() {
 }
 
 export default App
+

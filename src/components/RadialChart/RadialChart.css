@@ -1,0 +1,80 @@
+.radial-chart-shell {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.radial-chart-visual {
+  position: relative;
+  width: 100%;
+  max-width: none;
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  margin: 0 auto;
+  border-radius: 12px;
+  overflow: hidden;
+  background: radial-gradient(circle at center 62%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.64) 56%, rgba(255, 255, 255, 0) 100%);
+}
+
+.chart-frame--radial {
+  height: 170%;
+  width: 100%;
+  transform: translateY(3%);
+  transform-origin: center top;
+}
+
+.chart-frame--radial > div {
+  width: 100% !important;
+}
+
+.radial-center-copy {
+  position: absolute;
+  left: 50%;
+  top: 76%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.radial-total {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: clamp(1.7rem, 3.6vw, 2.4rem);
+  line-height: 1;
+  letter-spacing: -0.05em;
+  color: #111b34;
+}
+
+.ag-dashboard-tooltip {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.18) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.ag-charts-tooltip {
+  border-radius: 12px !important;
+  background: rgba(15, 23, 42, 0.94) !important;
+  color: #ffffff !important;
+  border: 0 !important;
+}
+
+.ag-charts-tooltip-title {
+  background: transparent !important;
+  color: #f8fafc !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 600 !important;
+  padding: 12px 16px 8px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.ag-charts-tooltip-content {
+  color: #d1d8e7 !important;
+  font-family: var(--font-mono) !important;
+  padding: 8px 16px 12px !important;
+}

@@ -1,10 +1,14 @@
 import { AgCharts } from 'ag-charts-react'
 import {
+  type AgChartOptions,
+} from 'ag-charts-community'
+import {
   formatCurrency,
   formatPercent,
   type SellerSegment,
   type TrafficSegment,
-} from '../data'
+} from '../../data'
+import './RadialChart.css'
 
 type SegmentDatum = SellerSegment | TrafficSegment
 
@@ -26,17 +30,25 @@ interface RadialChartProps {
   animationKey?: string
 }
 
-function buildHalfMoonData(
-  segments: SegmentDatum[],
+function buildHalfMoonData<TSegment extends SegmentDatum>(
+  segments: TSegment[],
   filteredTotal: number,
-  labelAccessor: (segment: SegmentDatum) => string,
+  labelAccessor: (segment: TSegment) => string,
 ): HalfMoonDatum[] {
-  const visibleSegments: HalfMoonDatum[] = segments.map((segment) => ({
-    ...segment,
-    label: labelAccessor(segment),
-    longLabel: 'longLabel' in segment ? segment.longLabel : segment.label,
-    isFiller: false,
-  }))
+  const visibleSegments: HalfMoonDatum[] = segments.map((segment) => {
+    const longLabel = 'longLabel' in segment ? segment.longLabel : segment.label
+    const showLabel = 'showLabel' in segment ? segment.showLabel : undefined
+
+    return {
+      key: segment.key,
+      label: labelAccessor(segment),
+      longLabel,
+      value: segment.value,
+      color: segment.color,
+      isFiller: false,
+      showLabel,
+    }
+  })
 
   return [
     ...visibleSegments,
@@ -109,7 +121,7 @@ function RadialChart({
       enabled: true,
       color: '#ffffff',
       fontFamily: 'Outfit, sans-serif',
-      fontWeight: '600',
+      fontWeight: 600,
       fontSize: 13,
       positionRatio: 0.56,
       formatter: makeSectorLabelFormatter(),
@@ -139,7 +151,7 @@ function RadialChart({
     },
     tooltip: isInteractive
       ? {
-          class: 'ag-dashboard-tooltip',
+          enabled: true,
         }
       : {
           enabled: false,
@@ -147,7 +159,7 @@ function RadialChart({
     series: [
       {
         ...commonSeries,
-        type: 'donut',
+        type: 'donut' as const,
         data: sellerData,
         fills: sellerData.map((segment) => segment.color),
         strokes: sellerData.map((segment) =>
@@ -158,13 +170,13 @@ function RadialChart({
         sectorLabel: {
           ...commonSeries.sectorLabel,
           fontSize: 14,
-          fontWeight: '700',
+          fontWeight: 700,
           positionRatio: 0.54,
         },
       },
       {
         ...commonSeries,
-        type: 'donut',
+        type: 'donut' as const,
         data: trafficData,
         fills: trafficData.map((segment) => segment.color),
         strokes: trafficData.map((segment) =>
@@ -175,7 +187,7 @@ function RadialChart({
         sectorLabel: {
           ...commonSeries.sectorLabel,
           fontSize: 11,
-          fontWeight: '600',
+          fontWeight: 600,
           positionRatio: 0.58,
         },
       },
@@ -187,7 +199,7 @@ function RadialChart({
       <div className="radial-chart-visual">
         <AgCharts
           key={animationKey}
-          options={options}
+          options={options as AgChartOptions}
           className="chart-frame chart-frame--radial"
         />
         <div className="radial-center-copy">
@@ -199,3 +211,5 @@ function RadialChart({
 }
 
 export default RadialChart
+
+

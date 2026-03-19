@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react'
+import './ChartErrorBoundary.css'
 
 interface ChartErrorBoundaryProps {
   children: ReactNode
@@ -42,3 +43,4 @@ class ChartErrorBoundary extends Component<ChartErrorBoundaryProps, ChartErrorBo
 }
 
 export default ChartErrorBoundary
+
