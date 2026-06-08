@@ -7,7 +7,7 @@ function buildHalfMoonData(segments, filteredTotal, labelAccessor) {
     label: labelAccessor(segment),
     isFiller: false,
   }))
-
+// checking who is going to commit
   return [
     ...visibleSegments,
     {
