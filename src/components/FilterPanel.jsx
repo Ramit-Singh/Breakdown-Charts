@@ -4,7 +4,7 @@ function FilterPanel({ sellerFilter, onSellerChange }) {
   const topLevelFilters = FILTER_OPTIONS.filter(
     (opt) => opt.key === SELLER_FILTERS.ALL || opt.key === SELLER_FILTERS.ONE_P || opt.key === SELLER_FILTERS.THREE_P
   )
-
+//checking checklist
   const is3PContext =
     sellerFilter === SELLER_FILTERS.THREE_P ||
     sellerFilter === SELLER_FILTERS.FBA ||
